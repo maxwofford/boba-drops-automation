@@ -29,7 +29,7 @@ for (const website of websites.slice(0, 50)) {
       console.log("Website already archived on waybackmachine")
     } else {
       console.log("Submitting website to waybackmachine")
-      console.log(await submitWaybackMachine(url))
+      await submitWaybackMachine(url)
       await Bun.sleep(5 * 1000) // wait for ratelimit
     }
   } catch(e) {

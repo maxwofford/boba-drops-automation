@@ -1,4 +1,3 @@
-const puppeteer = require("puppeteer");
 const tempdir = './tmp'
 import { unlink } from "node:fs/promises"
 
@@ -16,60 +15,57 @@ console.log("Processing websites:", websites.length)
 if (websites.length === 0) { process.exit(0) }
 
 let filesToDelete = []
-let browser = null;
 await startFileServer()
-await puppeteer
-  .launch()
-  .then(async (browser) => {
-    const page = await browser.newPage();
-    for (const website of websites.slice(0, 10)) {
-      let url = website.get("GitHub Pages URL")
-      if (!url.includes("http")) {
-        url = `https://${url}`
-      }
-      console.log("Processing website:", url)
-      const fieldsToUpdate = {
-        "Automation– take screenshot": false
-      }
-      try {
-        await page.goto(url);
 
-        await Bun.sleep(5000) // wait for ratelimit
-
-        // Save screenshot to a file
-        const randomHex = Math.random().toString(16)
-        const tempfileName = `screenshot-${randomHex}.png`
-        const tempfilePath = `${tempdir}/${tempfileName}`
-        await page.screenshot({ path: tempfilePath })
-        filesToDelete.push(tempfilePath)
-
-        const screenshotUrl = await uploadImg(tempfileName)
-
-        // Update Airtable with screenshot URL
-        fieldsToUpdate["Screenshot"] = [{ url: screenshotUrl }]
-      } catch(e) {
-        console.error(e)
-      } finally {
-        await websitesBase.update(website.id, fieldsToUpdate)
-      }
-    }
-  })
-  .catch((error) => {
-    console.error(error)
-  })
-  .finally(async () => {
-    await Bun.sleep(10 * 1000) // wait for file uploads to end
-    filesToDelete.forEach(async (file) => {
-      if (await Bun.file(file).exists()) {
-        await unlink(file)
+for (const website of websites.slice(0, 10)) {
+  let url = website.get("GitHub Pages URL")
+  if (!url.includes('http')) {
+    url = 'https://' + url
+  }
+  console.log("Processing website:", url)
+  const fieldsToUpdate = {
+    "Automation– take screenshot": false
+  }
+  await fetch (`https://chrome.browserless.io/screenshot?token=${Bun.env.BROWSERLESSIO_TOKEN}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-cache"
+    },
+    body: JSON.stringify({
+      url: url,
+      options: {
+        fullPage: true,
+        type: "png"
       }
     })
-    await stopFileServer()
+  }).then(r => r.blob()).then(async data => {
+    // Save screenshot to a file
+    const randomHex = Math.random().toString(16)
+    const tempfileName = `screenshot-${randomHex}.png`
+    const tempfilePath = `${tempdir}/${tempfileName}`
+    await Bun.write(tempfilePath, data)
 
-    browser && browser.close()
+    // Update Airtable with screenshot URL
+    const screenshotUrl = await uploadImg(tempfileName)
+    fieldsToUpdate["Screenshot"] = [{ url: screenshotUrl }]
 
-    process.exit(0)
+    filesToDelete.push(tempfilePath)
+  }).finally(async () => {
+    await websitesBase.update(website.id, fieldsToUpdate)
   })
+}
 
-console.log("No sites to screenshot!")
-Bun.sleep(5 * 1000)
+if (filesToDelete.length == 0) {
+  console.log("No sites to screenshot!")
+  Bun.sleep(5 * 1000)
+} else {
+  console.log("Spinning down...")
+  await Bun.sleep(10 * 1000) // wait for file uploads to end
+  filesToDelete.forEach(async (file) => {
+    if (await Bun.file(file).exists()) {
+      await unlink(file)
+    }
+  })
+  await stopFileServer()
+}
