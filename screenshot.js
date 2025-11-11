@@ -18,11 +18,10 @@ let filesToDelete = []
 await startFileServer()
 
 for (const website of websites.slice(0, 10)) {
-  let url = website.get("GitHub Pages URL")
+  let url = website.get("Playable URL")
   if (!url.includes('http')) {
     url = 'https://' + url
   }
-  console.log("Processing website:", url)
   const fieldsToUpdate = {
     "Automation– take screenshot": false
   }

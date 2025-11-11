@@ -21,7 +21,7 @@ trap 'rm -f "$LOCKFILE"' EXIT
 echo "Running script..."
 
 export PATH=$PATH:$HOME/.bun/bin
-bun install && bun run screenshot.js && bun run waybackmachine.js
+bun install && bun run screenshot.js
 
 # Script completes
 echo "Script finished."
