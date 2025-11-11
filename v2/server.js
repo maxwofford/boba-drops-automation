@@ -85,8 +85,7 @@ async function processScreenshots() {
   }
 
   if (recordsToUpdate.length > 0) {
-    console.log("Updating records:", JSON.stringify(recordsToUpdate, null, 2))
-    const response = await fetch(`https://api.airtable.com/v0/app05mIKwNPO2l1vT/Websites`, {
+    await fetch(`https://api.airtable.com/v0/app05mIKwNPO2l1vT/Websites`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -94,8 +93,6 @@ async function processScreenshots() {
       },
       body: JSON.stringify({ records: recordsToUpdate })
     })
-    const result = await response.json()
-    console.log("Airtable batch update response:", response.status, JSON.stringify(result, null, 2))
   }
 
   for (const file of filesToDelete) {
