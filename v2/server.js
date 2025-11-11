@@ -26,7 +26,7 @@ async function processScreenshots() {
     maxRecords: 10
   }
   
-  const apiUrl = `https://api2.hackclub.com/v0.1/Boba%20Drops/Websites?select=${encodeURIComponent(JSON.stringify(selectParams))}&cache=true`
+  const apiUrl = `https://api2.hackclub.com/v0.1/Boba%20Drops/Websites?select=${encodeURIComponent(JSON.stringify(selectParams))}&cache=false`
   const response = await fetch(apiUrl)
   const websites = await response.json()
 
